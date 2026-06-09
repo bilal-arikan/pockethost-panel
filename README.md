@@ -2,7 +2,7 @@
 
 A **lightweight, tailnet-only management panel** for a self-hosted PocketHost — **list / create / delete** instances and jump to each instance's admin UI, without pockethost.io's heavy mothership/dashboard.
 
-<img width="950" height="359" alt="ss" src="https://github.com/user-attachments/assets/b832c79c-42c2-40cb-936b-3dbf154d7a0f" />
+<img width="944" height="448" alt="image" src="https://github.com/user-attachments/assets/e6e90ade-c439-462b-af81-8b2e6008e3dc" />
 
 ## How it works
 
