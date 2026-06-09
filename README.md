@@ -4,6 +4,8 @@ A **lightweight, single-user (tailnet-only) management panel** for a self-hosted
 
 No need for pockethost.io's heavy "mothership + dashboard" architecture â€” **list / create / delete** instances from one place and jump to each instance's admin UI with a single click.
 
+<img width="950" height="359" alt="ss" src="https://github.com/user-attachments/assets/b832c79c-42c2-40cb-936b-3dbf154d7a0f" />
+
 ## Architecture
 
 To avoid conflicting with PocketHost's internal state, the panel reads its **registry (`db.json`) and filesystem**, and performs operations through PocketHost's own mechanisms:
