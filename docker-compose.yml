@@ -1,0 +1,29 @@
+# Runs the panel in a container alongside an EXISTING host PocketHost.
+#
+# The panel is tightly coupled to the host: it inspects pocketbase processes,
+# reads/writes PocketHost's data dir, and restarts the host `pockethost` service
+# on delete. To make that work from a container we:
+#   - user 1000:1000      -> write db.json/allowlist.json as the host owner
+#                            (so the host pockethost, also that user, can rewrite them)
+#   - network_mode: host  -> bind PANEL_PORT and reach 127.0.0.1:PH_PORT (+ sshd)
+#   - pid: host           -> `ps` sees the host pocketbase processes
+#   - service control over ssh -> PH_*_CMD ssh into 127.0.0.1 and `sudo systemctl`
+#     (no root/privileged needed; see .env). The mounted key may sudo on the host.
+#   - bind-mount PH_HOME 1:1 so config paths resolve identically
+#
+# Linux host only. Copy .env.example to .env and fill in secrets + key path first.
+services:
+  panel:
+    build: .
+    image: pockethost-panel
+    container_name: pockethost-panel
+    restart: unless-stopped
+    user: "1000:1000"
+    env_file: .env
+    network_mode: host
+    pid: host
+    volumes:
+      # PocketHost home (data + plugin-launcher-spawn), mounted at the SAME path.
+      - ${PH_HOME}:${PH_HOME}
+      # SSH key used to run `sudo systemctl` on the host (read-only).
+      - ${PH_CTL_KEY}:/keys/host_ctl:ro

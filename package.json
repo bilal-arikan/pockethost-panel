@@ -1,0 +1,10 @@
+{
+  "name": "pockethost-panel",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Lightweight tailnet-only management panel for a self-hosted PocketHost server",
+  "scripts": {
+    "start": "bun run src/server.js"
+  }
+}

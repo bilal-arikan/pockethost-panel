@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PocketHost Panel</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header>
+      <div class="brand">
+        <span class="logo">◧</span>
+        <h1>PocketHost Panel</h1>
+      </div>
+      <div class="status" id="service-status">…</div>
+    </header>
+
+    <main>
+      <section class="create-bar">
+        <input
+          id="new-name"
+          type="text"
+          placeholder="new-instance-name"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button id="create-btn">+ Create instance</button>
+        <button id="refresh-btn" class="ghost">↻ Refresh</button>
+      </section>
+
+      <p class="hint" id="hint"></p>
+
+      <section class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Instance</th>
+              <th>State</th>
+              <th>Size</th>
+              <th>Created</th>
+              <th>Links</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="rows">
+            <tr><td colspan="6" class="empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="creds" id="creds"></section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

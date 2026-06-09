@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Bun
+bun.lockb
+
+# Logs
+*.log
+logs/
+panel.log
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# Build output
+dist/
+build/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# Runtime / temp
+*.pid
+*.seed
+tmp/
+.cache/
+
+# Real systemd unit holds secrets — keep only the .example
+deploy/pockethost-panel.service
