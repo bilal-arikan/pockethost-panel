@@ -4,8 +4,8 @@
 services:
   panel:
     build: .
-    image: pocketbase-manager
-    container_name: pocketbase-manager
+    image: pocketbase-forge
+    container_name: pocketbase-forge
     restart: unless-stopped
     env_file: .env
     # App binds PORT internally and generates instance URLs with it, so the
@@ -17,3 +17,5 @@ services:
 
 volumes:
   pbdata:
+    # Pinned name so the data survives project/directory renames.
+    name: pocketbaseforge_data

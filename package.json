@@ -1,9 +1,9 @@
 {
-  "name": "pockethost-panel",
+  "name": "pocketbase-forge",
   "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "Self-contained multi-tenant PocketBase manager: spawns/proxies one PocketBase per subdomain. No PocketHost, no host coupling — runs anywhere in a single container.",
+  "description": "PocketBaseForge — self-contained multi-tenant PocketBase host: spawns/proxies one PocketBase per subdomain. No PocketHost, no host coupling — runs anywhere in a single container.",
   "scripts": {
     "start": "bun run src/server.js"
   }

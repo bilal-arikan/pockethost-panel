@@ -19,6 +19,6 @@ export function isAuthorized(req) {
 export function unauthorizedResponse() {
   return new Response('Authentication required', {
     status: 401,
-    headers: { 'WWW-Authenticate': 'Basic realm="PocketHost Panel"' },
+    headers: { 'WWW-Authenticate': 'Basic realm="PocketBaseForge"' },
   })
 }

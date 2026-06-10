@@ -1,4 +1,4 @@
-# PocketBase Manager
+# PocketBaseForge
 
 A **self-contained, multi-tenant PocketBase host**. One small Bun service is both a **management panel** and a **reverse proxy**: it spawns one PocketBase process per instance and routes `<name>.<apex>` to it. No PocketHost, no systemd, no host coupling — it runs **identically on Windows / macOS / Linux** in a single container with normal Docker volume persistence.
 

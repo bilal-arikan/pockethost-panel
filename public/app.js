@@ -1,4 +1,4 @@
-// Frontend logic for the PocketBase Manager. Vanilla JS, no build step.
+// Frontend logic for PocketBaseForge. Vanilla JS, no build step.
 
 const $ = (sel) => document.querySelector(sel)
 const rows = $('#rows')

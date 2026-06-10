@@ -114,6 +114,6 @@ process.on('SIGTERM', shutdown)
 process.on('SIGINT', shutdown)
 
 console.log(
-  `PocketBase manager on http://${config.host}:${config.port} ` +
+  `PocketBaseForge on http://${config.host}:${config.port} ` +
   `(apex: ${config.apexDomain}) — panel + per-subdomain proxy`,
 )
