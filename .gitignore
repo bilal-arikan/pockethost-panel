@@ -40,5 +40,7 @@ desktop.ini
 tmp/
 .cache/
 
-# Real systemd unit holds secrets — keep only the .example
-deploy/pockethost-panel.service
+# Local instance data (when running outside a container)
+data/
+pb_data/
+*.zip

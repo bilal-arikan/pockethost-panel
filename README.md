@@ -1,44 +1,51 @@
-# PocketHost Panel
+# PocketBase Manager
 
-A **lightweight, tailnet-only management panel** for a self-hosted PocketHost — **list / create / delete** instances and jump to each instance's admin UI, without pockethost.io's heavy mothership/dashboard.
+A **self-contained, multi-tenant PocketBase host**. One small Bun service is both a **management panel** and a **reverse proxy**: it spawns one PocketBase process per instance and routes `<name>.<apex>` to it. No PocketHost, no systemd, no host coupling — it runs **identically on Windows / macOS / Linux** in a single container with normal Docker volume persistence.
 
 <img width="944" height="448" alt="image" src="https://github.com/user-attachments/assets/e6e90ade-c439-462b-af81-8b2e6008e3dc" />
 
 ## How it works
 
-The panel never fights PocketHost's state — it reads the registry (`db.json`) + filesystem and acts through PocketHost's own mechanisms:
+- **List** — known instances (registry + on-disk `pb_data`), with live running/port/size.
+- **Create** — registers the name, bootstraps schema + a default superuser via `pocketbase superuser upsert`, then starts the process.
+- **Proxy** — a request to `<name>.<apex>` is reverse-proxied to that instance's private loopback port. Streaming is preserved, so the admin UI (`/_/`), REST API, file up/downloads and realtime (SSE) all work.
+- **Lazy start** — an instance boots on its first request and is tracked in memory; optionally reaped after idle.
+- **Delete** — stops just that one process and removes its folder. **Each instance is independent — no global restart, no downtime for the others.**
 
-- **List** — `db.json` + `data/` + running processes (`ps`) + size (`du`)
-- **Create** — adds the name to `allowlist.json`, then fires an internal `health` request → PocketHost spawns it and the patched `auto-admin` plugin sets up the superuser
-- **Delete** — stops `pockethost` → removes the `db.json` entry + `data/<name>` + allowlist entry → restarts (~6 s; needed because PocketHost caches instance URLs in memory)
+Only **known** subdomains ever spawn a process, so visiting a random subdomain can't create databases.
 
-**Allowlist gate:** a patch to `@pockethost/plugin-launcher-spawn` ([`deploy/plugin-patch/plugin.ts`](deploy/plugin-patch/plugin.ts)) makes it refuse any subdomain not in `allowlist.json`, so instances can only be created through the panel. The patch lives in `node_modules`, so re-apply it after any `pockethost` reinstall/upgrade.
+## Routing & access
+
+Routing is by `Host` subdomain against a configurable `APEX_DOMAIN`:
+
+| Host | Goes to |
+|------|---------|
+| `<apex>` or `panel.<apex>` or any other host/IP | management panel (Basic Auth) |
+| `<name>.<apex>` | PocketBase instance `<name>` |
+| `<name>.<apex>/_/` | that instance's admin UI |
+
+`APEX_DOMAIN` defaults to **`localhost`** — browsers resolve `*.localhost` to 127.0.0.1, so `http://myapp.localhost:8090/_/` just works with **zero DNS setup**. In production set a real wildcard domain (e.g. `pocket.example.com` with `*.pocket` → server IP).
 
 ## Run
 
-**systemd:** copy `deploy/pockethost-panel.service.example` → `pockethost-panel.service`, fill in the `__SET_ME__` secrets, enable it.
-
-**Docker Compose** (runs next to an existing host PocketHost, Linux only):
-
 ```bash
-cp .env.example .env                                  # fill in secrets + paths
-ssh-keygen -t ed25519 -N '' -f secrets/panel_ctl_ed25519
-cat secrets/panel_ctl_ed25519.pub >> ~/.ssh/authorized_keys
+cp .env.example .env        # set PANEL_PASS + PB_ADMIN_PASSWORD
 docker compose up -d --build
+# panel:    http://localhost:8090
+# instance: http://<name>.localhost:8090/_/   (after you create <name>)
 ```
 
-The container runs as the **host user (uid 1000)** with `network_mode: host` + `pid: host`, and controls the host `pockethost` service over **ssh** (`PH_STOP_CMD`/`PH_START_CMD`/`PH_STATUS_CMD` → `ssh … sudo systemctl …`; no root/`privileged`). Set any to `""` to disable.
+Data lives in the named volume `pbdata` (`/data` → `registry.json` + `instances/<name>/pb_data`). It survives container removal, rebuilds and reboots; back up by copying that volume.
 
 ## Config (env)
 
 | Env | Default | Description |
 |-----|---------|-------------|
-| `PANEL_PORT` | `8096` | Panel port |
-| `PANEL_USER` / `PANEL_PASS` | `admin` / — | Basic Auth |
-| `PH_HOME` | `/home/user/services/pockethost/home` | PocketHost home |
-| `PH_PORT` | `8095` | PocketHost port |
-| `PH_APEX_DOMAIN` | `pocket.example.com` | Apex domain |
-| `PH_SERVICE` | `pockethost` | systemd unit name |
-| `PH_STOP_CMD` / `PH_START_CMD` / `PH_STATUS_CMD` | `sudo systemctl …` | Service control (overridable for Docker) |
+| `PORT` | `8090` | Public port (panel + proxy) |
+| `APEX_DOMAIN` | `localhost` | Subdomain routing apex |
+| `PANEL_USER` / `PANEL_PASS` | `admin` / — | Panel Basic Auth |
+| `PB_ADMIN_EMAIL` / `PB_ADMIN_PASSWORD` | `admin@example.com` / — | Default superuser per instance |
+| `IDLE_TIMEOUT_MS` | `0` | Stop an instance after N ms idle (0 = never) |
+| `INSTANCE_PORT_BASE` / `INSTANCE_PORT_MAX` | `9001` / `9999` | Internal loopback port range |
 
-**Access:** `http://panel.pocket.example.com:8096` over tailnet (`*.pocket` wildcard → Tailscale IP), Basic Auth, port exposed via UFW on `tailscale0` only. Secrets live only in `.env` / the systemd unit — never in the repo. No dependencies beyond the **Bun** runtime.
+The PocketBase version is pinned in the `Dockerfile` (`PB_VERSION`). No npm dependencies — just the Bun runtime + the PocketBase binary.

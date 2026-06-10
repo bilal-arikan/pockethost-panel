@@ -1,58 +1,55 @@
-﻿// Central configuration for the PocketHost management panel.
-// Every value can be overridden via environment variables (see the systemd unit).
+// Central configuration. Every value is overridable via environment variables.
+// This build manages PocketBase binaries directly (no PocketHost), so it is
+// fully self-contained and portable (runs the same on Windows/macOS/Linux,
+// natively or in a single container).
 import { join } from 'path'
 
-const PH_HOME = process.env.PH_HOME || '/home/user/services/pockethost/home'
-
-const PH_SERVICE = process.env.PH_SERVICE || 'pockethost'
-
-// Resolve a service-control command from an env override into an argv array.
-// - undefined  -> use the provided default (host systemd behaviour)
-// - ""         -> no-op (command is skipped; useful where the panel cannot or
-//                 must not control the service, e.g. a managed sidecar)
-// - "a b c"    -> split on whitespace into argv (no shell, no injection)
-function resolveCmd(envValue, fallback) {
-  if (envValue === undefined) return fallback
-  const trimmed = envValue.trim()
-  return trimmed === '' ? null : trimmed.split(/\s+/)
-}
+const DATA_DIR = process.env.DATA_DIR || '/data'
 
 export const config = {
-  // Port the panel itself listens on (tailnet-only via UFW).
-  panelPort: parseInt(process.env.PANEL_PORT || '8096', 10),
+  // Port the panel + reverse proxy listen on (single public port).
+  port: parseInt(process.env.PORT || '8090', 10),
+  host: process.env.HOST || '0.0.0.0',
 
-  // PocketHost layout.
-  phHome: PH_HOME,
-  dataDir: process.env.PH_DATA_DIR || join(PH_HOME, 'data'),
-  dbJson:
-    process.env.PH_DB_JSON ||
-    join(PH_HOME, 'plugin-launcher-spawn', 'db.json'),
-  // Allowlist consumed by the patched launcher-spawn plugin. Only subdomains
-  // listed here may be provisioned â€” the panel appends a name before creating.
-  allowlistJson:
-    process.env.PH_ALLOWLIST_JSON ||
-    join(PH_HOME, 'plugin-launcher-spawn', 'allowlist.json'),
-  phPort: parseInt(process.env.PH_PORT || '8095', 10),
-  apexDomain: process.env.PH_APEX_DOMAIN || 'pocket.example.com',
-  phService: PH_SERVICE,
+  // Apex domain used for subdomain routing. `<name>.<apex>` -> instance,
+  // the bare apex (or `panel.<apex>`) -> management UI.
+  // Default `localhost`: browsers resolve `*.localhost` to 127.0.0.1, so the
+  // panel works with zero DNS setup. Set to a real wildcard domain in prod.
+  apexDomain: process.env.APEX_DOMAIN || 'localhost',
 
-  // Service-control commands. Default to host systemd; override via env for
-  // containerized deployments (e.g. nsenter into the host, or "" to disable).
-  serviceStopCmd: resolveCmd(process.env.PH_STOP_CMD, ['sudo', 'systemctl', 'stop', PH_SERVICE]),
-  serviceStartCmd: resolveCmd(process.env.PH_START_CMD, ['sudo', 'systemctl', 'start', PH_SERVICE]),
-  serviceStatusCmd: resolveCmd(process.env.PH_STATUS_CMD, ['systemctl', 'is-active', PH_SERVICE]),
+  // Storage layout (lives on a persistent volume).
+  dataDir: DATA_DIR,
+  instancesDir: process.env.INSTANCES_DIR || join(DATA_DIR, 'instances'),
+  registryFile: process.env.REGISTRY_FILE || join(DATA_DIR, 'registry.json'),
 
-  // Per-instance default admin (set by the patched auto-admin plugin).
-  adminEmail: process.env.PH_AUTO_ADMIN_LOGIN || 'admin@example.com',
-  adminPassword: process.env.PH_AUTO_ADMIN_PASSWORD || '',
+  // PocketBase binary (in PATH inside the container; override for local runs).
+  pbBin: process.env.PB_BIN || 'pocketbase',
 
-  // Basic-auth credentials guarding the panel.
+  // Internal port range for spawned PocketBase processes (loopback only).
+  portBase: parseInt(process.env.INSTANCE_PORT_BASE || '9001', 10),
+  portMax: parseInt(process.env.INSTANCE_PORT_MAX || '9999', 10),
+
+  // Idle shutdown: stop an instance after this many ms with no requests.
+  // 0 disables idle reaping (instances stay up once started).
+  idleTimeoutMs: parseInt(process.env.IDLE_TIMEOUT_MS || '0', 10),
+
+  // Seconds to wait for a freshly spawned instance to become healthy.
+  startTimeoutMs: parseInt(process.env.START_TIMEOUT_MS || '15000', 10),
+
+  // Default superuser created for every new instance.
+  adminEmail: process.env.PB_ADMIN_EMAIL || 'admin@example.com',
+  adminPassword: process.env.PB_ADMIN_PASSWORD || '',
+
+  // Basic-auth credentials guarding the management UI/API (not the instances —
+  // each PocketBase has its own auth).
   panelUser: process.env.PANEL_USER || 'admin',
   panelPass: process.env.PANEL_PASS || 'admin',
 }
 
-// Public (browser-facing) URL of an instance over tailnet.
-export const instanceUrl = (name) =>
-  `http://${name}.${config.apexDomain}:${config.phPort}`
+// External URL of an instance (what a browser hits).
+export const instanceUrl = (name) => {
+  const p = config.port === 80 ? '' : `:${config.port}`
+  return `http://${name}.${config.apexDomain}${p}`
+}
 
 export const instanceAdminUrl = (name) => `${instanceUrl(name)}/_/`

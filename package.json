@@ -1,9 +1,9 @@
 {
   "name": "pockethost-panel",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "Lightweight tailnet-only management panel for a self-hosted PocketHost server",
+  "description": "Self-contained multi-tenant PocketBase manager: spawns/proxies one PocketBase per subdomain. No PocketHost, no host coupling — runs anywhere in a single container.",
   "scripts": {
     "start": "bun run src/server.js"
   }
