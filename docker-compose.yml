@@ -8,8 +8,10 @@ services:
     container_name: pocketbase-manager
     restart: unless-stopped
     env_file: .env
+    # App binds PORT internally and generates instance URLs with it, so the
+    # host mapping must use the same port on both sides.
     ports:
-      - "${PORT:-8090}:8090"
+      - "${PORT:-8090}:${PORT:-8090}"
     volumes:
       - pbdata:/data
 
